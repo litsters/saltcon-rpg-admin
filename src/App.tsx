@@ -1,61 +1,86 @@
-import { useCallback, useMemo, useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import React from 'react'
 import './App.css'
-import axios from 'axios'
+import { Dashboard } from './Dashboard'
+import { Amplify } from 'aws-amplify'
+import {
+  Authenticator,
+  useTheme,
+  Heading,
+  Text
+} from '@aws-amplify/ui-react';
+import '@aws-amplify/ui-react/styles.css';
 
-type HealthCheckStatus = "unknown" | "healthy" | "unhealthy";
 
-function App() {
-  const [healthCheckStatus, setHealthCheckStatus] = useState<HealthCheckStatus>("unknown")
+/** Configure user pool */
+Amplify.configure({
+  Auth: {
+    region: "us-west-1",
+    userPoolId: import.meta.env.VITE_USER_POOL_ID,
+    userPoolWebClientId: import.meta.env.VITE_CLIENT_ID
+  }
+})
 
-  const doHealthCheck = useCallback(async () => {
-    try{
-      const res = await axios.get("https://saltcontools.hopto.org/api/health");
-      console.log(JSON.stringify(res,null,2))
-      if(res.status === 200 && res.data === "Healthy"){
-        return true;
-      } else {
-        return false;
-      }
-    }catch(e){
-      console.error(e);
-      return false;
-    }
-  },[])
+/** Customize Authenticator to hide Sign Up */
+const formFields = {
+  confirmVerifyUser: {
+    confirmation_code: {
+      label: 'New Label',
+      placeholder: 'Enter your Confirmation Code:',
+      isRequired: false,
+    },
+  },
+};
 
-  const healthCheckMessage = useMemo(()=>{
-    switch(healthCheckStatus){
-      case "healthy": return "backend is healthy";
-      case "unhealthy": return "backend is not healthy";
-      case "unknown": return "click to do health check"
-    }
-  },[healthCheckStatus])
+const components = {
+  VerifyUser: {
+    Header() {
+      const { tokens } = useTheme();
+      return (
+        <Heading
+          padding={`${tokens.space.xl} 0 0 ${tokens.space.xl}`}
+          level={3}
+        >
+          Enter Information:
+        </Heading>
+      );
+    },
+    Footer() {
+      return <Text>Footer Information</Text>;
+    },
+  },
+
+  ConfirmVerifyUser: {
+    Header() {
+      const { tokens } = useTheme();
+      return (
+        <Heading
+          padding={`${tokens.space.xl} 0 0 ${tokens.space.xl}`}
+          level={3}
+        >
+          Enter Information:
+        </Heading>
+      );
+    },
+    Footer() {
+      return <Text>Footer Information</Text>;
+    },
+  },
+};
+
+const App: React.FC = () => {
+
 
   return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => doHealthCheck().then(healthy => setHealthCheckStatus(healthy ? "healthy" : "unhealthy"))}>
-          {healthCheckMessage}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <Authenticator
+      formFields={formFields}
+      components={components}
+      hideSignUp={true}
+    >
+      {({/*signOut,*/ user}) => (
+        <Dashboard username={user.username}/>
+      )}
+    </Authenticator>
+  );
 }
 
-export default App
+export default App;
