@@ -17,7 +17,7 @@ export const Dashboard:React.FC<Props> = ({username}) => {
     try{
       const res = await axios.get("https://saltcontools.hopto.org/api/health");
       console.log(JSON.stringify(res,null,2))
-      if(res.status === 200 && res.data === "Healthy"){
+      if(res.status === 200 && res.data === "Database Connection Healthy"){
         return true;
       } else {
         return false;
